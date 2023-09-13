@@ -5,10 +5,23 @@ import spr_note
 from MIDISpriteGenerator import MIDISpriteGenerator
 import random
 from threading import Thread
+import fluidsynth
+import sf2_loader
+import pygame
+
+
 
 midi_file = "Vampire_Killer_1.mid"
 sound_font = "8bitsf.sf2"
  
+fs = fluidsynth.Synth()
+fs.start()
+sfid = fs.sfload(sound_font)
+
+fs.program_select(0, sfid, 0, 56)
+fs.program_select(1, sfid, 0, 32)
+fs.program_select(2, sfid, 0, 56)
+fs.program_select(9, sfid, 128, 0)  
 # define a main function
 def main():
      
@@ -47,6 +60,8 @@ def main():
             if event.type == pygame.QUIT:
                 # change the value to False, to exit the main loop
                 running = False
+            elif event.type == pygame.USEREVENT:
+                notes.add(spr_note.Note(event.note_val))
                 
         displaysurface.fill((0,50,0))
         for spr in notes:
@@ -57,17 +72,28 @@ def main():
         
         if pygame.sprite.spritecollideany(dead_zone, notes):
             for spr in notes:
-                if pygame.sprite.spritecollide(dead_zone, notes, True):
-                    print("Note end: ", len(notes))
+                if pygame.sprite.collide_rect(dead_zone, spr):
+                    if not spr.at_playhead:
+                        spr.at_playhead = True
+                        fs.noteon(0, spr.note_val, 80)
+                elif spr.at_playhead:
+                    print("Note complete")
+                    fs.noteoff(0, spr.note_val)
+                    spr.kill()
             
 
         pygame.display.update()
         
-        if tick % 30 == 0:
-            if random.choice([True, False]):
-                notes.add(spr_note.Note(random.choice(['C4', 'D4', 'E4', 'F4', 'G5', 'A5'])))
+        # if tick % 30 == 0:
+        #     if random.choice([True, False]):
+        #         notes.add(spr_note.Note(random.randrange(0, 127)))
      
      
+# def generate_sprites():
+#     midi_sprite_gen = MIDISpriteGenerator(midi_file, sound_font)
+#     midi_sprite_gen.prepare_to_play()
+#     midi_sprite_gen.play()
+    
 # run the main function only if this module is executed as the main script
 # (if you import this as a module then nothing is executed)
 if __name__=="__main__":
