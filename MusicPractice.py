@@ -2,9 +2,12 @@
 import pygame
 from pygame.locals import *
 import spr_note
+from MIDISpriteGenerator import MIDISpriteGenerator
 import random
+from threading import Thread
 
-
+midi_file = "Vampire_Killer_1.mid"
+sound_font = "8bitsf.sf2"
  
 # define a main function
 def main():
@@ -25,7 +28,9 @@ def main():
     pygame.display.set_caption("Game")
 
     
-
+    midi_sprite_gen = MIDISpriteGenerator(midi_file, sound_font)
+    midi_sprite_gen.prepare_to_play()
+    sprite_gen_thread = Thread(target=midi_sprite_gen.play)
     notes = pygame.sprite.Group()
     dead_zone = spr_note.Deadzone()
      
@@ -33,6 +38,7 @@ def main():
     running = True
     tick = 0
     # main loop
+    sprite_gen_thread.start()
     while running:
         tick += 1
         # event handling, gets all event from the event queue
@@ -57,7 +63,7 @@ def main():
 
         pygame.display.update()
         
-        if tick % 60 == 0:
+        if tick % 30 == 0:
             if random.choice([True, False]):
                 notes.add(spr_note.Note(random.choice(['C4', 'D4', 'E4', 'F4', 'G5', 'A5'])))
      
